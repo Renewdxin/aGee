@@ -1,37 +1,30 @@
 package gee
 
 import (
-	"fmt"
 	"net/http"
 )
 
 // HandlerFunc 是一个处理器函数类型，用于处理 HTTP 请求。
-type HandlerFunc func(*http.Request, http.ResponseWriter)
+type HandlerFunc func(*Context)
 
 type Engine struct {
-	router map[string]HandlerFunc // 路由器，用于处理请求的函数
-}
-
-func (eng *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	key := request.Method + "-" + request.URL.Path
-	if handler, ok := eng.router[key]; ok {
-		handler(request, writer)
-	} else {
-		writer.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(writer, "404 NOT FOUND: %s\n", request.URL)
-	}
+	router *router // 路由器，用于处理请求的函数
 }
 
 func New() *Engine {
-	return &Engine{router: make(map[string]HandlerFunc)}
+	return &Engine{router: newRouter()}
+}
+
+func (eng *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	c := newContext(writer, request)
+	eng.router.handle(c)
 }
 
 // 向引擎中添加路由
 // - handler：处理请求的函数，将在路由匹配成功后执行
 func (eng *Engine) addRoute(method string, pattern string, handler HandlerFunc) {
 	// 将method和pattern拼接成一个key，用于存储特定的路由
-	key := method + "-" + pattern
-	eng.router[key] = handler
+	eng.router.addRoute(method, pattern, handler)
 }
 
 func (eng *Engine) GET(pattern string, handler HandlerFunc) {
