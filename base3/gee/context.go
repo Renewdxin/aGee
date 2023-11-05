@@ -6,12 +6,6 @@ import (
 	"net/http"
 )
 
-/**
-我们将和路由相关的方法和结构提取了出来，放到了一个新的文件中router.go
-方便我们下一次对 router 的功能进行增强，例如提供动态路由的支持。
-router 的 handle 方法作了一个细微的调整，即 handler 的参数，变成了 Context。
-*/
-
 // H 类似于gin.H{}
 type H map[string]interface{}
 

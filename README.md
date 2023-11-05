@@ -34,3 +34,36 @@ go.mod 用于管理项目的依赖关系，而 go.sum 用于验证依赖项的�
 1. 将路由(router)独立出来，方便之后增强。
 2. 设计上下文(Context)，封装 Request 和 Response ，提供对 JSON、HTML 等返回类型的支持。
 3. 动手写 Gee 框架的第二天，框架代码140行，新增代码约90行
+第二天成果展示
+```go
+func main() {
+	r := gee.New()
+	r.GET("/", func(c *gee.Context) {
+		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
+	})
+	r.GET("/hello", func(c *gee.Context) {
+		// expect /hello?name=geektutu
+		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
+	})
+
+	r.POST("/login", func(c *gee.Context) {
+		c.JSON(http.StatusOK, gee.H{
+			"username": c.PostForm("username"),
+			"password": c.PostForm("password"),
+		})
+	})
+
+	r.Run(":9999")
+}
+```
+
+## 设计Context的原因
+在构造一个完整的响应时，需要包含很多内容，如果没有有效的封装，则需要进行大量复杂的构造
+1. 简化接口调用
+2. 方便支撑额外功能，如解析动态路由，支持中间件
+设计 Context 结构，扩展性和复杂性留在了内部，而对外简化了接口。 路由的处理函数，以及将要实现的中间件，参数都统一使用 Context 实例， Context 就像一次会话的百宝箱，可以找到任何东西。
+
+
+## new函数为什么返回指针
+1. 需要在函数内部修改对象的状态：如果你希望在函数内部修改对象的状态，并且这些更改应该在函数调用结束后保持有效，那么你通常应该返回指向对象的指针。返回对象的值将创建对象的副本，而不会影响原始对象。 
+2. 避免复制开销：在Go中，将大型对象作为值传递会导致对象的复制，这可能会导致性能问题。通过返回指针，可以避免复制整个对象，从而提高性能。
