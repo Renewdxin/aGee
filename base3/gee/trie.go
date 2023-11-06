@@ -9,8 +9,14 @@ type node struct {
 	isWild   bool    // 是否精确匹配，part 含有 : 或 * 时为true
 }
 
+/*
+*
+此函数用于查找并返回一个与给定的 part 字符串匹配的单个子节点。
+查找相应的参数
+*/
 func (n *node) matchChild(part string) *node {
 	for _, child := range n.children {
+		//参数部分 || 精准匹配
 		if child.part == part || child.isWild {
 			return child
 		}
@@ -18,6 +24,10 @@ func (n *node) matchChild(part string) *node {
 	return nil
 }
 
+/*
+*
+用于查找并返回所有与给定的 part 字符串匹配的子节点。
+*/
 func (n *node) matchChildren(part string) []*node {
 	nodes := make([]*node, 0)
 	for _, child := range n.children {

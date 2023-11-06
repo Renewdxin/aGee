@@ -27,6 +27,7 @@ func newRouter() *router {
 	}
 }
 
+// 用于将路由模式字符串解析为易于处理的部分，以便路由器能够根据请求的 URL 进行路由匹配
 func parsePattern(pattern string) []string {
 	vs := strings.Split(pattern, "/")
 
@@ -82,6 +83,7 @@ func (r *router) getRoute(method string, path string) (*node, map[string]string)
 	return nil, nil
 }
 
+// 在调用匹配到的handler前，将解析出来的路由参数赋值给了c.Params。这样就能够在handler中，通过Context对象访问到具体的值了。
 func (r *router) handle(c *Context) {
 	n, params := r.getRoute(c.Method, c.Path)
 
