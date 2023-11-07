@@ -101,4 +101,13 @@ HTTP请求的路径恰好是由/分隔的多段构成的，因此，每一段可
 1. 参数匹配:。例如 /p/:lang/doc，可以匹配 /p/c/doc 和 /p/go/doc。
 2. 通配*。例如 /static/*filepath，可以匹配/static/fav.ico，也可以匹配/static/js/jQuery.js，这种模式常用于静态服务器，能够递归地匹配子路径。
 
+# the fourth day 11.7
 
+## TASK
+实现路由分组控制(Route Group Control)，代码约50行
+
+## 分组的意义
+在真实的业务场景中，往往某一路由需要相似的处理，例如 `/admin`开头的路由往往需要明确访问者身份，而大部分情况下的路由分组是根据prefix来分组的
+这里实现的分组控制是以前缀来区分的并且支持分组的嵌套，作用在分组上的中间件（middleware）也会作用在子分组上，子分组也可有自己的中间件，有点像继承
+所以我们定义的分组里面必须包含这几项：prefix、parent、middleware，
+但还需要访问`router`东西，也就是保存一个指针，指向Engine，整个框架的所有资源都是由Engine统一协调的，那么就可以通过Engine间接地访问各种接口了。
