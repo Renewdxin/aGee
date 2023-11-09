@@ -16,6 +16,8 @@ type Context struct {
 	Method     string
 	Params     map[string]string
 	StatusCode int
+	handlers   []HandlerFunc
+	index      int //记录执行到第几个中间件
 }
 
 func newContext(w http.ResponseWriter, request *http.Request) *Context {
@@ -24,6 +26,15 @@ func newContext(w http.ResponseWriter, request *http.Request) *Context {
 		Request: request,
 		Path:    request.URL.Path,
 		Method:  request.Method,
+		index:   -1,
+	}
+}
+
+func (c *Context) Next() {
+	c.index++
+	s := len(c.handlers)
+	for ; c.index < s; c.index++ {
+		c.handlers[c.index](c)
 	}
 }
 

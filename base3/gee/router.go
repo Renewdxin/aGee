@@ -8,11 +8,8 @@ router 的 handle 方法作了一个细微的调整，即 handler 的参数，�
 */
 
 import (
-	"fmt"
 	"net/http"
-	"reflect"
 	"strings"
-	"testing"
 )
 
 type router struct {
@@ -84,53 +81,58 @@ func (r *router) getRoute(method string, path string) (*node, map[string]string)
 }
 
 // 在调用匹配到的handler前，将解析出来的路由参数赋值给了c.Params。这样就能够在handler中，通过Context对象访问到具体的值了。
+// handle 函数中，将从路由匹配得到的 Handler 添加到 c.handlers列表中，执行c.Next()
 func (r *router) handle(c *Context) {
 	n, params := r.getRoute(c.Method, c.Path)
 
 	if n != nil {
-		c.Params = params
 		key := c.Method + "-" + n.pattern
-		r.handlers[key](c)
+		c.Params = params
+		c.handlers = append(c.handlers, r.handlers[key])
 	} else {
-		c.String(http.StatusNotFound, "404 NOT FOUND:%s\n", c.Path)
+		c.handlers = append(c.handlers, func(context *Context) {
+			c.String(http.StatusNotFound, "404 NOT FOUND %S\n", c.Path)
+		})
 	}
+	c.Next()
 }
 
-func newTestRouter() *router {
-	r := newRouter()
-	r.addRoute("GET", "/", nil)
-	r.addRoute("GET", "/hello/:name", nil)
-	r.addRoute("GET", "/hello/b/c", nil)
-	r.addRoute("GET", "/hi/:name", nil)
-	r.addRoute("GET", "/assets/*filepath", nil)
-	return r
-}
-
-func TestParsePattern(t *testing.T) {
-	ok := reflect.DeepEqual(parsePattern("/p/:name"), []string{"p", ":name"})
-	ok = ok && reflect.DeepEqual(parsePattern("/p/*"), []string{"p", "*"})
-	ok = ok && reflect.DeepEqual(parsePattern("/p/*name/*"), []string{"p", "*name"})
-	if !ok {
-		t.Fatal("test parsePattern failed")
-	}
-}
-
-func TestGetRoute(t *testing.T) {
-	r := newTestRouter()
-	n, ps := r.getRoute("GET", "/hello/geektutu")
-
-	if n == nil {
-		t.Fatal("nil shouldn't be returned")
-	}
-
-	if n.pattern != "/hello/:name" {
-		t.Fatal("should match /hello/:name")
-	}
-
-	if ps["name"] != "geektutu" {
-		t.Fatal("name should be equal to 'geektutu'")
-	}
-
-	fmt.Printf("matched path: %s, params['name']: %s\n", n.pattern, ps["name"])
-
-}
+//Test function
+//func newTestRouter() *router {
+//	r := newRouter()
+//	r.addRoute("GET", "/", nil)
+//	r.addRoute("GET", "/hello/:name", nil)
+//	r.addRoute("GET", "/hello/b/c", nil)
+//	r.addRoute("GET", "/hi/:name", nil)
+//	r.addRoute("GET", "/assets/*filepath", nil)
+//	return r
+//}
+//
+//func TestParsePattern(t *testing.T) {
+//	ok := reflect.DeepEqual(parsePattern("/p/:name"), []string{"p", ":name"})
+//	ok = ok && reflect.DeepEqual(parsePattern("/p/*"), []string{"p", "*"})
+//	ok = ok && reflect.DeepEqual(parsePattern("/p/*name/*"), []string{"p", "*name"})
+//	if !ok {
+//		t.Fatal("test parsePattern failed")
+//	}
+//}
+//
+//func TestGetRoute(t *testing.T) {
+//	r := newTestRouter()
+//	n, ps := r.getRoute("GET", "/hello/geektutu")
+//
+//	if n == nil {
+//		t.Fatal("nil shouldn't be returned")
+//	}
+//
+//	if n.pattern != "/hello/:name" {
+//		t.Fatal("should match /hello/:name")
+//	}
+//
+//	if ps["name"] != "geektutu" {
+//		t.Fatal("name should be equal to 'geektutu'")
+//	}
+//
+//	fmt.Printf("matched path: %s, params['name']: %s\n", n.pattern, ps["name"])
+//
+//}

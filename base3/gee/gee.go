@@ -3,6 +3,7 @@ package gee
 import (
 	"log"
 	"net/http"
+	"strings"
 )
 
 // HandlerFunc 是一个处理器函数类型，用于处理 HTTP 请求。
@@ -15,7 +16,7 @@ type RouterGroup struct {
 	engine      *Engine //所有组共享一个实例
 }
 
-// 嵌套类型
+// Engine 嵌套类型
 type Engine struct {
 	*RouterGroup
 	router *router        // 路由器，用于处理请求的函数
@@ -43,7 +44,15 @@ func (group *RouterGroup) Group(prefix string) *RouterGroup {
 }
 
 func (eng *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	var middlewares []HandlerFunc
+	//要判断该请求适用于哪些中间件，在这里简单通过 URL 的前缀来判断
+	for _, group := range eng.groups {
+		if strings.HasPrefix(request.URL.Path, group.prefix) {
+			middlewares = append(middlewares, group.middlewares...)
+		}
+	}
 	c := newContext(writer, request)
+	c.handlers = middlewares
 	eng.router.handle(c)
 }
 
@@ -68,4 +77,9 @@ func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
 // 返回错误对象 err。
 func (eng *Engine) Run(addr string) (err error) {
 	return http.ListenAndServe(addr, eng)
+}
+
+// Use 将中间件应用到某个group中
+func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
+	group.middlewares = append(group.middlewares, middlewares...)
 }
