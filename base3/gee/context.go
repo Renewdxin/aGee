@@ -18,6 +18,7 @@ type Context struct {
 	StatusCode int
 	handlers   []HandlerFunc
 	index      int //记录执行到第几个中间件
+	eng        *Engine
 }
 
 func newContext(w http.ResponseWriter, request *http.Request) *Context {
@@ -27,6 +28,15 @@ func newContext(w http.ResponseWriter, request *http.Request) *Context {
 		Path:    request.URL.Path,
 		Method:  request.Method,
 		index:   -1,
+	}
+}
+
+func (c *Context) HTML(code int, name string, data interface{}) {
+	c.SetHeader("Content-Type", "text/html")
+	c.Status(code)
+	if err := c.eng.htmlTemplates.ExecuteTemplate(c.Writer, name, data); err != nil {
+		//原博是c.Fail() ，这里没有此函数，擅作主张用了c.JSON()
+		c.JSON(500, err.Error())
 	}
 }
 
@@ -82,10 +92,4 @@ func (c *Context) JSON(code int, obj interface{}) {
 func (c *Context) Data(code int, data []byte) {
 	c.Status(code)
 	c.Writer.Write(data)
-}
-
-func (c *Context) HTML(code int, html string) {
-	c.SetHeader("Content-Type", "text/html")
-	c.Status(code)
-	c.Writer.Write([]byte(html))
 }

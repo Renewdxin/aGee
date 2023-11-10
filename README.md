@@ -132,3 +132,28 @@ HTTP请求的路径恰好是由/分隔的多段构成的，因此，每一段可
 循环中的具体步骤如下： 
 1. 将当前处理程序(c.handlers[c.index])传递给当前上下文(c)。 
 2. 将当前上下文的索引加1，表示移动到下一个处理程序。 循环会一直执行，直到当前上下文的索引达到处理程序列表的长度。
+
+
+
+# the sixth day 11.10
+
+## TASK
+1. 实现静态资源服务(Static Resource)。
+2. 支持HTML模板渲染。
+
+## html/template 库
+html/template为 HTML 提供了较为完整的支持。包括普通变量渲染、列表渲染、对象渲染等。gee 框架的模板渲染直接使用了html/template提供的能力。
+```go
+type Engine struct {
+	...
+	//将模板加载进内存
+	//是一个指向预定义的HTML模板的指针。可以使用该指针来操作和渲染HTML模板，以便在Go程序中生成动态内容。
+	//它是一个template.Template类型的指针，该类型包含了已经定义好的模板和相关的数据，可以用来快速生成HTML页面。
+	htmlTemplates *template.Template
+	//自定义模板渲染函数
+	//"funcMap" 是一个 Go 语言中的 template 包下的函数映射，它是一个 map 类型的变量，用于存储自定义的模板函数以及其对应的处理函数。
+	//通过 funcMap，可以在模板中调用自定义的函数并对模板进行动态处理。
+	funcMap       template.FuncMap
+}
+```
+

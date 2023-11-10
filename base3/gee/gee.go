@@ -1,8 +1,10 @@
 package gee
 
 import (
+	"html/template"
 	"log"
 	"net/http"
+	"path"
 	"strings"
 )
 
@@ -19,8 +21,10 @@ type RouterGroup struct {
 // Engine 嵌套类型
 type Engine struct {
 	*RouterGroup
-	router *router        // 路由器，用于处理请求的函数
-	groups []*RouterGroup //储存所有的路由组
+	router        *router        // 路由器，用于处理请求的函数
+	groups        []*RouterGroup //储存所有的路由组
+	htmlTemplates *template.Template
+	funcMap       template.FuncMap
 }
 
 func New() *Engine {
@@ -53,7 +57,16 @@ func (eng *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) 
 	}
 	c := newContext(writer, request)
 	c.handlers = middlewares
+	c.eng = eng
 	eng.router.handle(c)
+}
+
+func (eng *Engine) SetFuncMap(funcMap template.FuncMap) {
+	eng.funcMap = funcMap
+}
+
+func (eng *Engine) LoadHTMLGlob(pattern string) {
+	eng.htmlTemplates = template.Must(template.New("").Funcs(eng.funcMap).ParseGlob(pattern))
 }
 
 // 向引擎中添加路由
@@ -82,4 +95,25 @@ func (eng *Engine) Run(addr string) (err error) {
 // Use 将中间件应用到某个group中
 func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
 	group.middlewares = append(group.middlewares, middlewares...)
+}
+
+// static handler
+func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
+	absolutePath := path.Join(group.prefix, relativePath)
+	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
+	return func(context *Context) {
+		file := context.Param("filepath")
+		if _, err := fs.Open(file); err != nil {
+			context.Status(http.StatusNotFound)
+			return
+		}
+		fileServer.ServeHTTP(context.Writer, context.Request)
+	}
+}
+
+func (group *RouterGroup) Static(relativePath string, root string) {
+	handler := group.createStaticHandler(relativePath, http.Dir(root))
+	//生成文件路径URL
+	urlPattern := path.Join(relativePath, "/filepath")
+	group.GET(urlPattern, handler)
 }
