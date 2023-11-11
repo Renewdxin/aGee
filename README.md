@@ -157,3 +157,17 @@ type Engine struct {
 }
 ```
 
+# the seventh day 11.11
+
+## TASK
+实现错误处理机制
+
+## 为什么要实现错误处理机制
+1. 防止服务器宕机
+2. 方便用户定位错误
+
+## defer
+panic 会导致程序被中止，但是在退出前，会先处理完当前协程上已经defer 的任务，执行完成后再退出。效果类似于 java 语言的 try...catch。
+
+## recover
+Go 语言还提供了 recover 函数，可以避免因为 panic 发生而导致整个程序终止，recover 函数只在 defer 中生效。
